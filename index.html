@@ -1,172 +1,359 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>نموذج موجز تصميم شعار</title>
 
-    <!-- Tailwind CDN -->
+    <!-- Tailwind (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- React 18 + Babel -->
+    <!-- React 18 UMD -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Babel لتحويل JSX داخل الصفحة -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-      html, body {
-        background: #0a0a0a;
-        color: #f5f5f5;
-        font-family: system-ui, "Segoe UI", Tahoma, Arial, "Noto Sans", sans-serif;
-      }
-      input, textarea, select {
-        background: #1a1a1a;
-        color: #fff;
-        border: 1px solid #333;
-        border-radius: 8px;
-        padding: 10px;
-        width: 100%;
-        outline: none;
-      }
-      input:focus, textarea:focus, select:focus {
-        border-color: #fff;
-      }
-      button {
-        background: #fff;
-        color: #000;
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-weight: bold;
-        transition: 0.2s;
-      }
-      button:hover {
-        background: #ddd;
-      }
+      html,body { background:#0a0a0a; color:#f5f5f5; }
+      * { font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, "Noto Sans", "Helvetica Neue", Helvetica, sans-serif; }
+      .card { @apply bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg; }
+      .btn { @apply px-4 py-2 rounded-2xl shadow border border-neutral-700; }
+      .chip { @apply px-3 py-2 rounded-2xl border; }
+      input, textarea, select { @apply w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white; }
     </style>
   </head>
-
   <body>
     <div id="root"></div>
 
     <script type="text/babel">
-      const FORM_ENDPOINT = "https://formspree.io/f/mzzkaegk";
+      const { useState, useEffect } = React;
+
+      // ======= الإعدادات =======
+      const personalityOptions = ["حديث","فخم","بسيط","مرح","رسمي","تراثي","تقني","طبيعي","جريء","ودي"];
+      const usageOptions = ["وسائل التواصل","موقع إلكتروني","طباعة كبيرة","ورق رسمي","واجهات محلات","تطريز","أيقونة تطبيق","Favicon","أختام/ختم رسمي"];
+      const logoTypeOptions = [
+        { value: "wordmark", label: "نصي (Wordmark)" },
+        { value: "symbol", label: "رمز/أيقونة" },
+        { value: "combination", label: "مزيج (نص + رمز)" },
+        { value: "lettermark", label: "أحرف مختصرة (Lettermark)" },
+      ];
+      const langOptions = [
+        { value: "ar", label: "عربي" },
+        { value: "en", label: "إنجليزي" },
+        { value: "bi", label: "ثنائي اللغة" },
+      ];
+
+      // ضع رابط فورمس بري هنا
+      const FORMSPREE_ENDPOINT = "https://formspree.io/f/mzzkaegk"; // مثل: https://formspree.io/f/mzzkaegk
 
       function LogoBriefForm() {
-        const [formData, setFormData] = React.useState({
+        const [data, setData] = useState({
           brandNameAr: "",
           brandNameEn: "",
+          logoLanguage: "ar",
+          oneLineDesc: "",
           goal: "",
           audience: "",
+          personality: [],
           colorsPreferred: "",
           colorsAvoided: "",
+          likedLogos: [{ url: "", why: "" }],
+          dislikedLogos: [{ url: "", why: "" }],
+          usages: [],
+          logoType: "combination",
+          symbolsInclude: "",
+          symbolsAvoid: "",
+          mission: "",
+          values: "",
+          competitors: [{ name: "", url: "", note: "" }],
+          differentiation: "",
+          languageNotes: "",
+          constraints: "",
+          deliverables: {
+            mainLogo: true,
+            altLayouts: true,
+            iconOnly: true,
+            colorSystem: true,
+            typography: true,
+            shortGuidelines: true,
+            fullGuidelines: false,
+            templates: false,
+          },
           notes: "",
         });
-        const [sending, setSending] = React.useState(false);
+        const [showAdvanced, setShowAdvanced] = useState(false);
+        const [sending, setSending] = useState(false);
 
-        const handleChange = (field, value) => {
-          setFormData((prev) => ({ ...prev, [field]: value }));
+        const handleChange = (field, value) => setData((d) => ({ ...d, [field]: value }));
+        const handleArrayChange = (field, index, subField, value) => {
+          const arr = [...data[field]]; arr[index] = { ...arr[index], [subField]: value }; setData((d) => ({ ...d, [field]: arr }));
         };
+        const addRow = (field, template) => setData((d) => ({ ...d, [field]: [...d[field], template] }));
+        const removeRow = (field, i) => setData((d) => ({ ...d, [field]: d[field].filter((_, idx) => idx !== i) }));
+        const toggleMulti = (field, value) => { const s = new Set(data[field]); s.has(value) ? s.delete(value) : s.add(value); setData((d) => ({ ...d, [field]: Array.from(s) })); };
 
-        const handleSubmit = async (e) => {
-          e.preventDefault();
-          setSending(true);
+        async function handleSubmit() {
+          if (!FORMSPREE_ENDPOINT || FORMSPREE_ENDPOINT.includes("PASTE_YOUR_FORMSPREE_URL_HERE")) {
+            alert("رجاءً ضع رابط Formspree الصحيح في المتغير FORMSPREE_ENDPOINT.");
+            return;
+          }
           try {
-            const res = await fetch(FORM_ENDPOINT, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(formData),
+            setSending(true);
+            const res = await fetch(FORMSPREE_ENDPOINT, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({
+                // نحول كل شيء إلى JSON مسطح
+                payload: data,
+                submittedAt: new Date().toISOString(),
+              })
             });
             if (res.ok) {
-              alert("تم الإرسال بنجاح ✅");
-              setFormData({
-                brandNameAr: "",
-                brandNameEn: "",
-                goal: "",
-                audience: "",
-                colorsPreferred: "",
-                colorsAvoided: "",
-                notes: "",
-              });
+              alert('تم الإرسال بنجاح ✅');
             } else {
-              alert("حدث خطأ أثناء الإرسال ❌");
+              alert('تعذّر الإرسال (HTTP). تأكّد من الرابط في Formspree');
             }
-          } catch {
-            alert("فشل الاتصال بالخادم ❌");
-          } finally {
-            setSending(false);
-          }
-        };
+          } catch (e) {
+            alert('تعذّر الإرسال. تحقّق من الاتصال أو رابط Formspree');
+          } finally { setSending(false); }
+        }
 
         return (
-          <div className="max-w-2xl mx-auto p-6">
-            <h1 className="text-2xl font-semibold mb-6 text-center">نموذج موجز تصميم شعار</h1>
-
-            <form onSubmit={handleSubmit} className="grid gap-4">
-              <div>
-                <label>اسم العلامة (عربي)</label>
-                <input
-                  value={formData.brandNameAr}
-                  onChange={(e) => handleChange("brandNameAr", e.target.value)}
-                />
+          <div dir="rtl" className="min-h-screen">
+            <header className="sticky top-0 z-10 backdrop-blur bg-neutral-950/70 border-b border-neutral-800">
+              <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+                <h1 className="text-xl md:text-2xl font-semibold tracking-wide">نموذج موجز تصميم شعار</h1>
+                <span className="text-xs text-neutral-400">إصدار Formspree</span>
               </div>
+            </header>
 
-              <div>
-                <label>اسم العلامة (إنجليزي)</label>
-                <input
-                  value={formData.brandNameEn}
-                  onChange={(e) => handleChange("brandNameEn", e.target.value)}
-                />
+            <main className="max-w-5xl mx-auto px-4 py-8 grid gap-6">
+              {/* ١) معلومات أساسية */}
+              <section className="card">
+                <h2 className="text-lg font-semibold mb-4">١) معلومات أساسية</h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm mb-1">اسم العلامة (عربي)</label>
+                    <input value={data.brandNameAr} onChange={(e)=>handleChange('brandNameAr', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">اسم العلامة (إنجليزي)</label>
+                    <input value={data.brandNameEn} onChange={(e)=>handleChange('brandNameEn', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">لغة الشعار</label>
+                    <select value={data.logoLanguage} onChange={(e)=>handleChange('logoLanguage', e.target.value)}>
+                      {langOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">وصف سريع للعلامة (سطر واحد)</label>
+                    <input placeholder="ماذا تفعل علامتك؟" value={data.oneLineDesc} onChange={(e)=>handleChange('oneLineDesc', e.target.value)} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm mb-1">هدف الشعار</label>
+                    <input placeholder="إطلاق/تحديث/تميّز…" value={data.goal} onChange={(e)=>handleChange('goal', e.target.value)} />
+                  </div>
+                </div>
+              </section>
+
+              {/* ٢) الجمهور والشخصية */}
+              <section className="card">
+                <h2 className="text-lg font-semibold mb-4">٢) الجمهور والشخصية</h2>
+                <div className="grid gap-4">
+                  <div>
+                    <label className="block text-sm mb-1">الجمهور المستهدف</label>
+                    <textarea className="min-h-[90px]" value={data.audience} onChange={(e)=>handleChange('audience', e.target.value)} placeholder="العمر، الاهتمامات، الموقع…" />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-2">اختر 3 صفات للشخصية</label>
+                    <div className="flex flex-wrap gap-2">
+                      {personalityOptions.map(opt => {
+                        const active = data.personality.includes(opt);
+                        return (
+                          <button type="button" key={opt} onClick={()=>toggleMulti('personality', opt)} className={`chip ${active? 'bg-white text-neutral-900 border-white':'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}>{opt}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* ٣) الألوان والمراجع */}
+              <section className="card">
+                <h2 className="text-lg font-semibold mb-4">٣) الألوان والمراجع</h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm mb-1">ألوان مفضّلة</label>
+                    <input placeholder="مثال: أخضر زمردي، أسود، أبيض" value={data.colorsPreferred} onChange={(e)=>handleChange('colorsPreferred', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">ألوان ممنوعة</label>
+                    <input placeholder="مثال: أحمر صارخ…" value={data.colorsAvoided} onChange={(e)=>handleChange('colorsAvoided', e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6 mt-4">
+                  {/* شعارات مفضلة */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm">أمثلة شعارات تعجبك</label>
+                      <button className="text-xs chip bg-neutral-800 hover:bg-neutral-700" onClick={()=>addRow('likedLogos', {url:'', why:''})}>+ إضافة</button>
+                    </div>
+                    <div className="grid gap-3">
+                      {data.likedLogos.map((row,i)=> (
+                        <div key={i} className="grid grid-cols-12 gap-2 items-start">
+                          <input className="col-span-5" placeholder="الرابط" value={row.url} onChange={(e)=>handleArrayChange('likedLogos', i, 'url', e.target.value)} />
+                          <input className="col-span-6" placeholder="السبب" value={row.why} onChange={(e)=>handleArrayChange('likedLogos', i, 'why', e.target.value)} />
+                          <button className="col-span-1 text-xs chip bg-neutral-800 hover:bg-neutral-700" onClick={()=>removeRow('likedLogos', i)}>حذف</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* شعارات غير مفضلة */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm">أمثلة شعارات لا تعجبك</label>
+                      <button className="text-xs chip bg-neutral-800 hover:bg-neutral-700" onClick={()=>addRow('dislikedLogos', {url:'', why:''})}>+ إضافة</button>
+                    </div>
+                    <div className="grid gap-3">
+                      {data.dislikedLogos.map((row,i)=> (
+                        <div key={i} className="grid grid-cols-12 gap-2 items-start">
+                          <input className="col-span-5" placeholder="الرابط" value={row.url} onChange={(e)=>handleArrayChange('dislikedLogos', i, 'url', e.target.value)} />
+                          <input className="col-span-6" placeholder="السبب" value={row.why} onChange={(e)=>handleArrayChange('dislikedLogos', i, 'why', e.target.value)} />
+                          <button className="col-span-1 text-xs chip bg-neutral-800 hover:bg-neutral-700" onClick={()=>removeRow('dislikedLogos', i)}>حذف</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* ٤) الاستخدام ونوع الشعار */}
+              <section className="card">
+                <h2 className="text-lg font-semibold mb-4">٤) الاستخدام ونوع الشعار</h2>
+                <div className="grid gap-4">
+                  <div>
+                    <label className="block text-sm mb-2">أين سيُستخدم الشعار؟</label>
+                    <div className="flex flex-wrap gap-2">
+                      {usageOptions.map(u=> (
+                        <button key={u} type="button" onClick={()=>toggleMulti('usages', u)} className={`chip ${data.usages.includes(u)?'bg-white text-neutral-900 border-white':'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}>{u}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm mb-1">نوع الشعار المفضّل</label>
+                      <select value={data.logoType} onChange={(e)=>handleChange('logoType', e.target.value)}>
+                        {logoTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-1">رموز/معانٍ ترغب بإدراجها</label>
+                      <input placeholder="مثال: أسهم، دوائر، سحب، حروف…" value={data.symbolsInclude} onChange={(e)=>handleChange('symbolsInclude', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-1">رموز/معانٍ يجب تجنّبها</label>
+                      <input placeholder="مثال: حيوانات، وجوه بشرية…" value={data.symbolsAvoid} onChange={(e)=>handleChange('symbolsAvoid', e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* ٦) تفاصيل متقدمة */}
+              <section className="card">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">٦) تفاصيل متقدمة (اختياري)</h2>
+                  <button onClick={()=>setShowAdvanced(v=>!v)} className="chip bg-neutral-800 hover:bg-neutral-700">{showAdvanced? 'إخفاء':'عرض'}</button>
+                </div>
+                {showAdvanced && (
+                  <div className="grid gap-4 mt-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm mb-1">رسالة العلامة</label>
+                        <input placeholder="سطر موجز لرسالة العلامة" value={data.mission} onChange={(e)=>handleChange('mission', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-sm mb-1">القيم الأساسية</label>
+                        <input placeholder="3–5 كلمات" value={data.values} onChange={(e)=>handleChange('values', e.target.value)} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm">منافسون مباشِرون</label>
+                        <button className="text-xs chip bg-neutral-800 hover:bg-neutral-700" onClick={()=>addRow('competitors', {name:'', url:'', note:''})}>+ إضافة</button>
+                      </div>
+                      <div className="grid gap-3">
+                        {data.competitors.map((row,i)=> (
+                          <div key={i} className="grid md:grid-cols-12 grid-cols-1 gap-2 items-start">
+                            <input className="md:col-span-3" placeholder="الاسم" value={row.name} onChange={(e)=>handleArrayChange('competitors', i, 'name', e.target.value)} />
+                            <input className="md:col-span-5" placeholder="الرابط" value={row.url} onChange={(e)=>handleArrayChange('competitors', i, 'url', e.target.value)} />
+                            <input className="md:col-span-3" placeholder="ملاحظة" value={row.note} onChange={(e)=>handleArrayChange('competitors', i, 'note', e.target.value)} />
+                            <button className="md:col-span-1 text-xs chip bg-neutral-800 hover:bg-neutral-700" onClick={()=>removeRow('competitors', i)}>حذف</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-1">ما الذي يميزك؟</label>
+                      <textarea className="min-h-[80px]" placeholder="نقاط القوة والتميّز" value={data.differentiation} onChange={(e)=>handleChange('differentiation', e.target.value)} />
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm mb-1">ملاحظات حول اللغة/الكتابة</label>
+                        <input placeholder="التهجئة المعتمدة، حروف كبيرة/صغيرة…" value={data.languageNotes} onChange={(e)=>handleChange('languageNotes', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-sm mb-1">قيود تقنية/تنفيذية</label>
+                        <input placeholder="تطريز، حفر، لون واحد…" value={data.constraints} onChange={(e)=>handleChange('constraints', e.target.value)} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-2">المخرجات المطلوبة</label>
+                      <div className="grid md:grid-cols-4 grid-cols-2 gap-2">
+                        {Object.entries(data.deliverables).map(([k,v])=> (
+                          <label key={k} className="flex items-center gap-2 bg-neutral-800 rounded-xl p-2">
+                            <input type="checkbox" checked={!!v} onChange={(e)=>setData(d=>({ ...d, deliverables:{ ...d.deliverables, [k]: e.target.checked } }))} />
+                            <span className="text-sm">
+                              {k === 'mainLogo' && 'الشعار الرئيسي'}
+                              {k === 'altLayouts' && 'بدائل (أفقي/رأسي)'}
+                              {k === 'iconOnly' && 'أيقونة فقط'}
+                              {k === 'colorSystem' && 'نظام ألوان'}
+                              {k === 'typography' && 'خطوط'}
+                              {k === 'shortGuidelines' && 'دليل مختصر'}
+                              {k === 'fullGuidelines' && 'دليل كامل'}
+                              {k === 'templates' && 'قوالب'}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-1">ملاحظات إضافية</label>
+                      <textarea className="min-h-[80px]" placeholder="أي تفاصيل أخرى تود إضافتها" value={data.notes} onChange={(e)=>handleChange('notes', e.target.value)} />
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {/* زر الإرسال */}
+              <div className="flex justify-center">
+                <button onClick={handleSubmit} disabled={sending} className={`btn ${sending? 'bg-neutral-700 text-neutral-300':'bg-white text-neutral-900 hover:bg-neutral-200'}`}>{sending? 'جارٍ الإرسال…':'إرسال'}</button>
               </div>
+            </main>
 
-              <div>
-                <label>هدف الشعار</label>
-                <textarea
-                  value={formData.goal}
-                  onChange={(e) => handleChange("goal", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label>الجمهور المستهدف</label>
-                <textarea
-                  value={formData.audience}
-                  onChange={(e) => handleChange("audience", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label>ألوان مفضلة</label>
-                <input
-                  value={formData.colorsPreferred}
-                  onChange={(e) => handleChange("colorsPreferred", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label>ألوان ممنوعة</label>
-                <input
-                  value={formData.colorsAvoided}
-                  onChange={(e) => handleChange("colorsAvoided", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label>ملاحظات إضافية</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => handleChange("notes", e.target.value)}
-                />
-              </div>
-
-              <button type="submit" disabled={sending}>
-                {sending ? "جارٍ الإرسال..." : "إرسال"}
-              </button>
-            </form>
+            <footer className="max-w-5xl mx-auto px-4 py-10 text-center text-neutral-400">
+              <p> Made By Salah (Formspree)</p>
+            </footer>
           </div>
         );
       }
 
-      ReactDOM.createRoot(document.getElementById("root")).render(<LogoBriefForm />);
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<LogoBriefForm/>);
     </script>
   </body>
 </html>
