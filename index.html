@@ -1,243 +1,172 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>نموذج موجز تصميم شعار</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>نموذج موجز تصميم شعار</title>
 
-  <!-- Tailwind (CDN) -->
-  <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- React 18 UMD -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- React 18 + Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Babel لتحويل JSX في المتصفح -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      html, body {
+        background: #0a0a0a;
+        color: #f5f5f5;
+        font-family: system-ui, "Segoe UI", Tahoma, Arial, "Noto Sans", sans-serif;
+      }
+      input, textarea, select {
+        background: #1a1a1a;
+        color: #fff;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 10px;
+        width: 100%;
+        outline: none;
+      }
+      input:focus, textarea:focus, select:focus {
+        border-color: #fff;
+      }
+      button {
+        background: #fff;
+        color: #000;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: bold;
+        transition: 0.2s;
+      }
+      button:hover {
+        background: #ddd;
+      }
+    </style>
+  </head>
 
-  <style>
-    html,body { background:#0a0a0a; color:#f5f5f5; }
-    * { font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, "Noto Sans", "Helvetica Neue", sans-serif; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
+  <body>
+    <div id="root"></div>
 
-  <script type="text/babel">
-    const { useState } = React;
+    <script type="text/babel">
+      const FORM_ENDPOINT = "https://formspree.io/f/mzzkaegk";
 
-    // رابط Google Apps Script (جاهز)
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxoMIkJm02nBkDvJhz76haOK9ODyMvpquZvZKHjIeZyuIm9Qto6DVlLiFp1lOBO0gVwDA/exec";
+      function LogoBriefForm() {
+        const [formData, setFormData] = React.useState({
+          brandNameAr: "",
+          brandNameEn: "",
+          goal: "",
+          audience: "",
+          colorsPreferred: "",
+          colorsAvoided: "",
+          notes: "",
+        });
+        const [sending, setSending] = React.useState(false);
 
-    const personalityOptions = ["حديث","فخم","بسيط","مرح","رسمي","تراثي","تقني","طبيعي","جريء","ودي"];
-    const usageOptions = ["وسائل التواصل","موقع إلكتروني","طباعة كبيرة","ورق رسمي","واجهات محلات","تطريز","أيقونة تطبيق","Favicon","أختام/ختم رسمي"];
-    const logoTypeOptions = [
-      { value: "wordmark", label: "نصي (Wordmark)" },
-      { value: "symbol", label: "رمز/أيقونة" },
-      { value: "combination", label: "مزيج (نص + رمز)" },
-      { value: "lettermark", label: "أحرف مختصرة (Lettermark)" },
-    ];
-    const langOptions = [
-      { value: "ar", label: "عربي" },
-      { value: "en", label: "إنجليزي" },
-      { value: "bi", label: "ثنائي اللغة" },
-    ];
+        const handleChange = (field, value) => {
+          setFormData((prev) => ({ ...prev, [field]: value }));
+        };
 
-    function LogoBriefForm() {
-      const [data, setData] = useState({
-        brandNameAr: "",
-        brandNameEn: "",
-        logoLanguage: "ar",
-        oneLineDesc: "",
-        goal: "",
-        audience: "",
-        personality: [],
-        colorsPreferred: "",
-        colorsAvoided: "",
-        likedLogos: [{ url: "", why: "" }],
-        dislikedLogos: [{ url: "", why: "" }],
-        usages: [],
-        logoType: "combination",
-        symbolsInclude: "",
-        symbolsAvoid: "",
-        mission: "",
-        values: "",
-        competitors: [{ name: "", url: "", note: "" }],
-        differentiation: "",
-        languageNotes: "",
-        constraints: "",
-        deliverables: {
-          mainLogo: true,
-          altLayouts: true,
-          iconOnly: true,
-          colorSystem: true,
-          typography: true,
-          shortGuidelines: true,
-          fullGuidelines: false,
-          templates: false,
-        },
-        notes: "",
-      });
-      const [showAdvanced, setShowAdvanced] = useState(false);
-      const [sending, setSending] = useState(false);
-
-      // Helpers
-      const handleChange = (field, value) => setData((d) => ({ ...d, [field]: value }));
-      const handleArrayChange = (field, index, subField, value) => {
-        const arr = [...data[field]];
-        arr[index] = { ...arr[index], [subField]: value };
-        setData((d) => ({ ...d, [field]: arr }));
-      };
-      const addRow = (field, template) => setData((d) => ({ ...d, [field]: [...d[field], template] }));
-      const removeRow = (field, i) => setData((d) => ({ ...d, [field]: d[field].filter((_, idx) => idx !== i) }));
-      const toggleMulti = (field, value) => {
-        const s = new Set(data[field]);
-        s.has(value) ? s.delete(value) : s.add(value);
-        setData((d) => ({ ...d, [field]: Array.from(s) }));
-      };
-
-      // إرسال إلى Google Apps Script
-      const handleSubmit = async () => {
-        if (!GAS_ENDPOINT) {
-          alert("رابط Google Apps Script غير مضبوط.");
-          return;
-        }
-        try {
+        const handleSubmit = async (e) => {
+          e.preventDefault();
           setSending(true);
-          await fetch(GAS_ENDPOINT, {
-            method: "POST",
-            mode: "no-cors",               // نكتفي بنجاح صامت (لا يوجد CORS)
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({ timestamp: new Date().toISOString(), ...data }),
-          });
-          alert("تم الإرسال بنجاح ✅");
-        } catch (e) {
-          alert("تعذّر الإرسال. تحقّق من رابط السكربت والصلاحيات.");
-        } finally {
-          setSending(false);
-        }
-      };
+          try {
+            const res = await fetch(FORM_ENDPOINT, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formData),
+            });
+            if (res.ok) {
+              alert("تم الإرسال بنجاح ✅");
+              setFormData({
+                brandNameAr: "",
+                brandNameEn: "",
+                goal: "",
+                audience: "",
+                colorsPreferred: "",
+                colorsAvoided: "",
+                notes: "",
+              });
+            } else {
+              alert("حدث خطأ أثناء الإرسال ❌");
+            }
+          } catch {
+            alert("فشل الاتصال بالخادم ❌");
+          } finally {
+            setSending(false);
+          }
+        };
 
-      return (
-        <div dir="rtl" className="min-h-screen">
-          <header className="sticky top-0 z-10 backdrop-blur bg-neutral-950/70 border-b border-neutral-800">
-            <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-              <h1 className="text-xl md:text-2xl font-semibold tracking-wide">نموذج موجز تصميم شعار</h1>
-            </div>
-          </header>
+        return (
+          <div className="max-w-2xl mx-auto p-6">
+            <h1 className="text-2xl font-semibold mb-6 text-center">نموذج موجز تصميم شعار</h1>
 
-          <main className="max-w-5xl mx-auto px-4 py-8 grid gap-6">
-            {/* ١) معلومات أساسية */}
-            <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
-              <h2 className="text-lg font-semibold mb-4">١) معلومات أساسية</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm mb-1">اسم العلامة (عربي)</label>
-                  <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white"
-                         value={data.brandNameAr}
-                         onChange={(e) => handleChange("brandNameAr", e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1">اسم العلامة (إنجليزي)</label>
-                  <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white"
-                         value={data.brandNameEn}
-                         onChange={(e) => handleChange("brandNameEn", e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1">لغة الشعار</label>
-                  <select className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white"
-                          value={data.logoLanguage}
-                          onChange={(e) => handleChange("logoLanguage", e.target.value)}>
-                    {langOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm mb-1">وصف سريع للعلامة (سطر واحد)</label>
-                  <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white"
-                         value={data.oneLineDesc}
-                         onChange={(e) => handleChange("oneLineDesc", e.target.value)}
-                         placeholder="ماذا تفعل علامتك؟" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm mb-1">هدف الشعار</label>
-                  <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white"
-                         value={data.goal}
-                         onChange={(e) => handleChange("goal", e.target.value)}
-                         placeholder="إطلاق/تحديث/تميّز…" />
-                </div>
+            <form onSubmit={handleSubmit} className="grid gap-4">
+              <div>
+                <label>اسم العلامة (عربي)</label>
+                <input
+                  value={formData.brandNameAr}
+                  onChange={(e) => handleChange("brandNameAr", e.target.value)}
+                />
               </div>
-            </section>
 
-            {/* ٢) الجمهور والشخصية */}
-            <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
-              <h2 className="text-lg font-semibold mb-4">٢) الجمهور والشخصية</h2>
-              <div className="grid gap-4">
-                <div>
-                  <label className="block text-sm mb-1">الجمهور المستهدف</label>
-                  <textarea className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white min-h-[90px]"
-                            value={data.audience}
-                            onChange={(e) => handleChange("audience", e.target.value)}
-                            placeholder="العمر، الاهتمامات، الموقع…" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2">اختر 3 صفات للشخصية</label>
-                  <div className="flex flex-wrap gap-2">
-                    {personalityOptions.map((opt) => {
-                      const active = data.personality.includes(opt);
-                      return (
-                        <button type="button" key={opt}
-                                onClick={() => toggleMulti("personality", opt)}
-                                className={`px-3 py-2 rounded-2xl border ${active ? "bg-white text-neutral-900 border-white" : "bg-neutral-800 border-neutral-700 hover:bg-neutral-700"}`}>
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+              <div>
+                <label>اسم العلامة (إنجليزي)</label>
+                <input
+                  value={formData.brandNameEn}
+                  onChange={(e) => handleChange("brandNameEn", e.target.value)}
+                />
               </div>
-            </section>
 
-            {/* ٣) الألوان والمراجع (مختصرة) */}
-            <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
-              <h2 className="text-lg font-semibold mb-4">٣) الألوان والمراجع</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm mb-1">ألوان مفضّلة</label>
-                  <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white"
-                         value={data.colorsPreferred}
-                         onChange={(e) => handleChange("colorsPreferred", e.target.value)}
-                         placeholder="مثال: أخضر زمردي، أسود، أبيض" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1">ألوان ممنوعة</label>
-                  <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white"
-                         value={data.colorsAvoided}
-                         onChange={(e) => handleChange("colorsAvoided", e.target.value)}
-                         placeholder="مثال: أحمر صارخ…" />
-                </div>
+              <div>
+                <label>هدف الشعار</label>
+                <textarea
+                  value={formData.goal}
+                  onChange={(e) => handleChange("goal", e.target.value)}
+                />
               </div>
-            </section>
 
-            {/* زر إرسال فقط */}
-            <div className="flex justify-center">
-              <button onClick={handleSubmit} disabled={sending}
-                className={`px-6 py-3 rounded-2xl shadow border border-neutral-700 ${sending ? "bg-neutral-700 text-neutral-300" : "bg-white text-neutral-900 hover:bg-neutral-200"}`}>
-                {sending ? "جارٍ الإرسال…" : "إرسال"}
+              <div>
+                <label>الجمهور المستهدف</label>
+                <textarea
+                  value={formData.audience}
+                  onChange={(e) => handleChange("audience", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label>ألوان مفضلة</label>
+                <input
+                  value={formData.colorsPreferred}
+                  onChange={(e) => handleChange("colorsPreferred", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label>ألوان ممنوعة</label>
+                <input
+                  value={formData.colorsAvoided}
+                  onChange={(e) => handleChange("colorsAvoided", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label>ملاحظات إضافية</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => handleChange("notes", e.target.value)}
+                />
+              </div>
+
+              <button type="submit" disabled={sending}>
+                {sending ? "جارٍ الإرسال..." : "إرسال"}
               </button>
-            </div>
-          </main>
+            </form>
+          </div>
+        );
+      }
 
-          <footer className="max-w-5xl mx-auto px-4 py-10 text-center text-neutral-400">
-            <p>صُمّم بواسطة صلاح/ChatGPT — واجهة RTL بسيطة لجمع متطلبات شعار احترافي.</p>
-          </footer>
-        </div>
-      );
-    }
-
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<LogoBriefForm />);
-  </script>
-</body>
+      ReactDOM.createRoot(document.getElementById("root")).render(<LogoBriefForm />);
+    </script>
+  </body>
 </html>
