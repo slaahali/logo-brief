@@ -1,414 +1,382 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>نموذج موجز تصميم شعار</title>
-    <!-- Tailwind CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React 18 + ReactDOM UMD -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel لتحويل JSX داخل المتصفح -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-      html,body { background:#0a0a0a; color:#f5f5f5; }
-      /* تحسين شكل الـ scrollbar في المعاينة */
-      pre { scrollbar-width: thin; }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
+import React, { useState, useEffect } from "react";
 
-    <script type="text/babel">
-      const { useState, useEffect } = React;
+// نموذج موجز تصميم شعار – واجهة عربية RTL (أسود/أبيض)
+// - كل الحقول اختيارية (لا يوجد Required)
+// - إرسال إلى Google Sheets عبر Google Apps Script، مع Fallback عبر البريد
+// - إصلاحات: إزالة أي تكرار لتعريف GAS_ENDPOINT، وإزالة أي بقايا placeholders غير مرغوبة
+// - Self-tests بسيطة في الكونسول للتأكد من التهيئة
 
-      // ------------- الإعدادات -------------
-      const personalityOptions = ["حديث","فخم","بسيط","مرح","رسمي","تراثي","تقني","طبيعي","جريء","ودي"];
-      const usageOptions = ["وسائل التواصل","موقع إلكتروني","طباعة كبيرة","ورق رسمي","واجهات محلات","تطريز","أيقونة تطبيق","Favicon","أختام/ختم رسمي"];
-      const logoTypeOptions = [
-        { value: "wordmark", label: "نصي (Wordmark)" },
-        { value: "symbol", label: "رمز/أيقونة" },
-        { value: "combination", label: "مزيج (نص + رمز)" },
-        { value: "lettermark", label: "أحرف مختصرة (Lettermark)" },
-      ];
-      const langOptions = [
-        { value: "ar", label: "عربي" },
-        { value: "en", label: "إنجليزي" },
-        { value: "bi", label: "ثنائي اللغة" },
-      ];
+// ------------- الإعدادات -------------
+const personalityOptions = ["حديث","فخم","بسيط","مرح","رسمي","تراثي","تقني","طبيعي","جريء","ودي"];
+const usageOptions = ["وسائل التواصل","موقع إلكتروني","طباعة كبيرة","ورق رسمي","واجهات محلات","تطريز","أيقونة تطبيق","Favicon","أختام/ختم رسمي"];
+const logoTypeOptions = [
+  { value: "wordmark", label: "نصي (Wordmark)" },
+  { value: "symbol", label: "رمز/أيقونة" },
+  { value: "combination", label: "مزيج (نص + رمز)" },
+  { value: "lettermark", label: "أحرف مختصرة (Lettermark)" },
+];
+const langOptions = [
+  { value: "ar", label: "عربي" },
+  { value: "en", label: "إنجليزي" },
+  { value: "bi", label: "ثنائي اللغة" },
+];
 
-      // أدخل رابط Google Apps Script هنا بعد النشر كـ Web App
-      const GAS_ENDPOINT = "PASTE_GOOGLE_APPS_SCRIPT_URL_HERE";
-      // بريد fallback إذا لم يتم إعداد GAS_ENDPOINT
-      const TO_EMAIL = "sallohe12304@gmail.com";
+// أدخل رابط Google Apps Script هنا بعد النشر كـ Web App
+const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxoMIkJm02nBkDvJhz76haOK9ODyMvpquZvZKHjIeZyuIm9Qto6DVlLiFp1lOBO0gVwDA/exec";
+// بريد fallback إذا لم يتم إعداد GAS_ENDPOINT
+const TO_EMAIL = "sallohe12304@gmail.com";
 
-      function LogoBriefForm() {
-        const [data, setData] = useState({
-          brandNameAr: "",
-          brandNameEn: "",
-          logoLanguage: "ar",
-          oneLineDesc: "",
-          goal: "",
-          audience: "",
-          personality: [],
-          colorsPreferred: "",
-          colorsAvoided: "",
-          likedLogos: [{ url: "", why: "" }],
-          dislikedLogos: [{ url: "", why: "" }],
-          usages: [],
-          logoType: "combination",
-          symbolsInclude: "",
-          symbolsAvoid: "",
-          mission: "",
-          values: "",
-          competitors: [{ name: "", url: "", note: "" }],
-          differentiation: "",
-          languageNotes: "",
-          constraints: "",
-          deliverables: {
-            mainLogo: true,
-            altLayouts: true,
-            iconOnly: true,
-            colorSystem: true,
-            typography: true,
-            shortGuidelines: true,
-            fullGuidelines: false,
-            templates: false,
-          },
-          notes: "",
-        });
-        const [showAdvanced, setShowAdvanced] = useState(false);
-        const [jsonOpen, setJsonOpen] = useState(false);
-        const [sending, setSending] = useState(false);
+export default function LogoBriefForm() {
+  const [data, setData] = useState({
+    brandNameAr: "",
+    brandNameEn: "",
+    logoLanguage: "ar",
+    oneLineDesc: "",
+    goal: "",
+    audience: "",
+    personality: [],
+    colorsPreferred: "",
+    colorsAvoided: "",
+    likedLogos: [{ url: "", why: "" }],
+    dislikedLogos: [{ url: "", why: "" }],
+    usages: [],
+    logoType: "combination",
+    symbolsInclude: "",
+    symbolsAvoid: "",
+    // قسم موسّع
+    mission: "",
+    values: "",
+    competitors: [{ name: "", url: "", note: "" }],
+    differentiation: "",
+    languageNotes: "",
+    constraints: "",
+    deliverables: {
+      mainLogo: true,
+      altLayouts: true,
+      iconOnly: true,
+      colorSystem: true,
+      typography: true,
+      shortGuidelines: true,
+      fullGuidelines: false,
+      templates: false,
+    },
+    notes: "",
+  });
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [jsonOpen, setJsonOpen] = useState(false);
+  const [sending, setSending] = useState(false);
 
-        useEffect(() => {
-          const tests = [];
-          const t = (name, pass, details = "") => {
-            tests.push({ name, pass, details });
-            (pass ? console.log : console.error)(`[LogoBriefTest] ${pass ? '✅' : '❌'} ${name}`, details);
-          };
-          t("langOptions Array", Array.isArray(langOptions));
-          t("logoTypeOptions contains combination", logoTypeOptions.some(o => o.value === "combination"));
-          t("GAS_ENDPOINT is string", typeof GAS_ENDPOINT === "string");
-          window.__LOGO_BRIEF_TESTS__ = tests;
-        }, []);
+  // ------------- Self Tests -------------
+  useEffect(() => {
+    const tests = [];
+    const t = (name, pass, details = "") => {
+      tests.push({ name, pass, details });
+      (pass ? console.log : console.error)(`[LogoBriefTest] ${pass ? '✅' : '❌'} ${name}`, details);
+    };
+    t("langOptions Array", Array.isArray(langOptions));
+    t("logoTypeOptions contains combination", logoTypeOptions.some(o => o.value === "combination"));
+    t("GAS_ENDPOINT is string", typeof GAS_ENDPOINT === "string");
+    window.__LOGO_BRIEF_TESTS__ = tests;
+  }, []);
 
-        const handleChange = (field, value) => setData((d) => ({ ...d, [field]: value }));
-        const handleArrayChange = (field, index, subField, value) => {
-          const arr = [...data[field]];
-          arr[index] = { ...arr[index], [subField]: value };
-          setData((d) => ({ ...d, [field]: arr }));
-        };
-        const addRow = (field, template) => setData((d) => ({ ...d, [field]: [...d[field], template] }));
-        const removeRow = (field, i) => setData((d) => ({ ...d, [field]: d[field].filter((_, idx) => idx !== i) }));
-        const toggleMulti = (field, value) => {
-          const s = new Set(data[field]);
-          s.has(value) ? s.delete(value) : s.add(value);
-          setData((d) => ({ ...d, [field]: Array.from(s) }));
-        };
+  // ------------- Helpers -------------
+  const handleChange = (field, value) => setData((d) => ({ ...d, [field]: value }));
+  const handleArrayChange = (field, index, subField, value) => {
+    const arr = [...data[field]]; arr[index] = { ...arr[index], [subField]: value }; setData((d) => ({ ...d, [field]: arr }));
+  };
+  const addRow = (field, template) => setData((d) => ({ ...d, [field]: [...d[field], template] }));
+  const removeRow = (field, i) => setData((d) => ({ ...d, [field]: d[field].filter((_, idx) => idx !== i) }));
+  const toggleMulti = (field, value) => { const s = new Set(data[field]); s.has(value) ? s.delete(value) : s.add(value); setData((d) => ({ ...d, [field]: Array.from(s) })); };
 
-        const downloadJSON = () => {
-          const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `logo-brief-${new Date().toISOString().slice(0,10)}.json`;
-          a.click();
-          URL.revokeObjectURL(url);
-        };
-        const copyJSON = async () => {
-          try {
-            await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-            alert("تم نسخ البيانات بصيغة JSON ✨");
-          } catch {
-            alert("تعذّر النسخ، جرّب المعاينة ثم انسخ يدويًا.");
-          }
-        };
+  const downloadJSON = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob); const a = document.createElement("a");
+    a.href = url; a.download = `logo-brief-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
+  };
+  const copyJSON = async () => { try { await navigator.clipboard.writeText(JSON.stringify(data, null, 2)); alert("تم نسخ البيانات بصيغة JSON ✨"); } catch { alert("تعذّر النسخ، جرّب المعاينة ثم انسخ يدويًا."); } };
 
-        const handleSubmit = async () => {
-          if (!GAS_ENDPOINT || GAS_ENDPOINT.includes("PASTE_GOOGLE_APPS_SCRIPT_URL_HERE")) {
-            try {
-              const payload = { timestamp: new Date().toISOString(), ...data };
-              const subject = encodeURIComponent(`Logo Brief – ${data.brandNameAr || data.brandNameEn || 'بدون اسم'} – ${new Date().toLocaleString()}`);
-              const body = encodeURIComponent(JSON.stringify(payload, null, 2));
-              window.location.href = `mailto:${TO_EMAIL}?subject=${subject}&body=${body}`;
-              alert("تم الإرسال بنجاح ✅\n(تم فتح برنامج البريد لإرسال النموذج. إذا لم يُفتح، انسخ JSON من المعاينة وأرسله يدويًا.)");
-            } catch {
-              alert("تعذّر فتح البريد. استخدم زر نسخ JSON وأرسله يدويًا.");
-            }
-            return;
-          }
-
-          try {
-            setSending(true);
-            await fetch(GAS_ENDPOINT, {
-              method: 'POST',
-              mode: 'no-cors',
-              headers: { 'Content-Type': 'text/plain' },
-              body: JSON.stringify({ timestamp: new Date().toISOString(), ...data })
-            });
-            alert('تم الإرسال بنجاح ✅');
-          } catch {
-            alert('تعذّر الإرسال. تأكّد من رابط السكربت والصلاحيات ثم أعد المحاولة.');
-          } finally { setSending(false); }
-        };
-
-        return (
-          <div dir="rtl" className="min-h-screen bg-neutral-950 text-neutral-100">
-            <header className="sticky top-0 z-10 backdrop-blur bg-neutral-950/70 border-b border-neutral-800">
-              <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-                <h1 className="text-xl md:text-2xl font-semibold tracking-wide">نموذج موجز تصميم شعار</h1>
-                <div className="flex gap-2">
-                  <button onClick={() => setJsonOpen(true)} className="px-3 py-2 rounded-2xl bg-neutral-800 hover:bg-neutral-700 transition shadow">معاينة JSON</button>
-                  <button onClick={copyJSON} className="px-3 py-2 rounded-2xl bg-neutral-800 hover:bg-neutral-700 transition shadow">نسخ JSON</button>
-                  <button onClick={downloadJSON} className="px-3 py-2 rounded-2xl bg-white text-neutral-900 hover:bg-neutral-200 transition shadow">تنزيل JSON</button>
-                </div>
-              </div>
-            </header>
-
-            <main className="max-w-5xl mx-auto px-4 py-8 grid gap-6">
-              {/* ١) معلومات أساسية */}
-              <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
-                <h2 className="text-lg font-semibold mb-4">١) معلومات أساسية</h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm mb-1">اسم العلامة (عربي)</label>
-                    <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.brandNameAr} onChange={(e) => handleChange('brandNameAr', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1">اسم العلامة (إنجليزي)</label>
-                    <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.brandNameEn} onChange={(e) => handleChange('brandNameEn', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1">لغة الشعار</label>
-                    <select className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.logoLanguage} onChange={(e) => handleChange('logoLanguage', e.target.value)}>
-                      {langOptions.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1">وصف سريع للعلامة (سطر واحد)</label>
-                    <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.oneLineDesc} onChange={(e) => handleChange('oneLineDesc', e.target.value)} placeholder="ماذا تفعل علامتك؟" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm mb-1">هدف الشعار</label>
-                    <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.goal} onChange={(e) => handleChange('goal', e.target.value)} placeholder="إطلاق/تحديث/تميّز…" />
-                  </div>
-                </div>
-              </section>
-
-              {/* ٢) الجمهور والشخصية */}
-              <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
-                <h2 className="text-lg font-semibold mb-4">٢) الجمهور والشخصية</h2>
-                <div className="grid gap-4">
-                  <div>
-                    <label className="block text-sm mb-1">الجمهور المستهدف</label>
-                    <textarea className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white min-h-[90px]" value={data.audience} onChange={(e) => handleChange('audience', e.target.value)} placeholder="العمر، الاهتمامات، الموقع…" />
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-2">اختر 3 صفات للشخصية</label>
-                    <div className="flex flex-wrap gap-2">
-                      {personalityOptions.map((opt) => {
-                        const active = data.personality.includes(opt);
-                        return (
-                          <button type="button" key={opt} onClick={() => toggleMulti('personality', opt)} className={`px-3 py-2 rounded-2xl border ${active ? 'bg-white text-neutral-900 border-white' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}>
-                            {opt}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* ٣) الألوان والمراجع */}
-              <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
-                <h2 className="text-lg font-semibold mb-4">٣) الألوان والمراجع</h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm mb-1">ألوان مفضّلة</label>
-                    <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.colorsPreferred} onChange={(e) => handleChange('colorsPreferred', e.target.value)} placeholder="مثال: أخضر زمردي، أسود، أبيض" />
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1">ألوان ممنوعة</label>
-                    <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.colorsAvoided} onChange={(e) => handleChange('colorsAvoided', e.target.value)} placeholder="مثال: أحمر صارخ…" />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6 mt-4">
-                  {/* شعارات مفضلة */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm">أمثلة شعارات تعجبك</label>
-                      <button className="text-xs px-2 py-1 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => addRow('likedLogos', { url: '', why: '' })}>+ إضافة</button>
-                    </div>
-                    <div className="grid gap-3">
-                      {data.likedLogos.map((row, i) => (
-                        <div key={i} className="grid grid-cols-12 gap-2 items-start">
-                          <input className="col-span-5 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="الرابط" value={row.url} onChange={(e) => handleArrayChange('likedLogos', i, 'url', e.target.value)} />
-                          <input className="col-span-6 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="السبب" value={row.why} onChange={(e) => handleArrayChange('likedLogos', i, 'why', e.target.value)} />
-                          <button className="col-span-1 text-xs px-2 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => removeRow('likedLogos', i)}>حذف</button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* شعارات غير مفضلة */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm">أمثلة شعارات لا تعجبك</label>
-                      <button className="text-xs px-2 py-1 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => addRow('dislikedLogos', { url: '', why: '' })}>+ إضافة</button>
-                    </div>
-                    <div className="grid gap-3">
-                      {data.dislikedLogos.map((row, i) => (
-                        <div key={i} className="grid grid-cols-12 gap-2 items-start">
-                          <input className="col-span-5 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="الرابط" value={row.url} onChange={(e) => handleArrayChange('dislikedLogos', i, 'url', e.target.value)} />
-                          <input className="col-span-6 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="السبب" value={row.why} onChange={(e) => handleArrayChange('dislikedLogos', i, 'why', e.target.value)} />
-                          <button className="col-span-1 text-xs px-2 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => removeRow('dislikedLogos', i)}>حذف</button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* ٤) الاستخدام ونوع الشعار */}
-              <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
-                <h2 className="text-lg font-semibold mb-4">٤) الاستخدام ونوع الشعار</h2>
-                <div className="grid gap-4">
-                  <div>
-                    <label className="block text-sm mb-2">أين سيُستخدم الشعار؟</label>
-                    <div className="flex flex-wrap gap-2">
-                      {usageOptions.map((u) => (
-                        <button key={u} type="button" onClick={() => toggleMulti('usages', u)} className={`px-3 py-2 rounded-2xl border ${data.usages.includes(u) ? 'bg-white text-neutral-900 border-white' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}>
-                          {u}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm mb-1">نوع الشعار المفضّل</label>
-                      <select className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.logoType} onChange={(e) => handleChange('logoType', e.target.value)}>
-                        {logoTypeOptions.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm mb-1">رموز/معانٍ ترغب بإدراجها</label>
-                      <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.symbolsInclude} onChange={(e) => handleChange('symbolsInclude', e.target.value)} placeholder="مثال: أسهم، دوائر، سحب، حروف…" />
-                    </div>
-                    <div>
-                      <label className="block text-sm mb-1">رموز/معانٍ يجب تجنّبها</label>
-                      <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.symbolsAvoid} onChange={(e) => handleChange('symbolsAvoid', e.target.value)} placeholder="مثال: حيوانات، وجوه بشرية…" />
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* ٦) تفاصيل متقدمة (اختياري) */}
-              <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">٦) تفاصيل متقدمة (اختياري)</h2>
-                  <button onClick={() => setShowAdvanced((v) => !v)} className="px-3 py-2 rounded-2xl bg-neutral-800 hover:bg-neutral-700">{showAdvanced ? 'إخفاء' : 'عرض'}</button>
-                </div>
-                {showAdvanced && (
-                  <div className="grid gap-4 mt-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm mb-1">رسالة العلامة</label>
-                        <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.mission} onChange={(e) => handleChange('mission', e.target.value)} placeholder="سطر موجز لرسالة العلامة" />
-                      </div>
-                      <div>
-                        <label className="block text-sm mb-1">القيم الأساسية</label>
-                        <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.values} onChange={(e) => handleChange('values', e.target.value)} placeholder="3–5 كلمات" />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm">منافسون مباشِرون</label>
-                        <button className="text-xs px-2 py-1 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => addRow('competitors', { name: '', url: '', note: '' })}>+ إضافة</button>
-                      </div>
-                      <div className="grid gap-3">
-                        {data.competitors.map((row, i) => (
-                          <div key={i} className="grid md:grid-cols-12 grid-cols-1 gap-2 items-start">
-                            <input className="md:col-span-3 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="الاسم" value={row.name} onChange={(e) => handleArrayChange('competitors', i, 'name', e.target.value)} />
-                            <input className="md:col-span-5 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="الرابط" value={row.url} onChange={(e) => handleArrayChange('competitors', i, 'url', e.target.value)} />
-                            <input className="md:col-span-3 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="ملاحظة" value={row.note} onChange={(e) => handleArrayChange('competitors', i, 'note', e.target.value)} />
-                            <button className="md:col-span-1 text-xs px-2 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => removeRow('competitors', i)}>حذف</button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm mb-1">ما الذي يميزك؟</label>
-                      <textarea className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white min-h-[80px]" value={data.differentiation} onChange={(e) => handleChange('differentiation', e.target.value)} placeholder="نقاط القوة والتميّز" />
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm mb-1">ملاحظات حول اللغة/الكتابة</label>
-                        <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.languageNotes} onChange={(e) => handleChange('languageNotes', e.target.value)} placeholder="التهجئة المعتمدة، حروف كبيرة/صغيرة…" />
-                      </div>
-                      <div>
-                        <label className="block text-sm mb-1">قيود تقنية/تنفيذية</label>
-                        <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.constraints} onChange={(e) => handleChange('constraints', e.target.value)} placeholder="تطريز، حفر، لون واحد…" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm mb-2">المخرجات المطلوبة</label>
-                      <div className="grid md:grid-cols-4 grid-cols-2 gap-2">
-                        {Object.entries(data.deliverables).map(([k, v]) => (
-                          <label key={k} className="flex items-center gap-2 bg-neutral-800 rounded-xl p-2">
-                            <input type="checkbox" checked={!!v} onChange={(e) => setData((d) => ({ ...d, deliverables: { ...d.deliverables, [k]: e.target.checked } }))} />
-                            <span className="text-sm">
-                              {k === 'mainLogo' && 'الشعار الرئيسي'}
-                              {k === 'altLayouts' && 'بدائل (أفقي/رأسي)'}
-                              {k === 'iconOnly' && 'أيقونة فقط'}
-                              {k === 'colorSystem' && 'نظام ألوان'}
-                              {k === 'typography' && 'خطوط'}
-                              {k === 'shortGuidelines' && 'دليل مختصر'}
-                              {k === 'fullGuidelines' && 'دليل كامل'}
-                              {k === 'templates' && 'قوالب'}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm mb-1">ملاحظات إضافية</label>
-                      <textarea className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white min-h-[80px]" value={data.notes} onChange={(e) => handleChange('notes', e.target.value)} placeholder="أي تفاصيل أخرى تود إضافتها" />
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              <div className="flex flex-wrap gap-3 justify-end">
-                <button onClick={() => setJsonOpen(true)} className="px-4 py-2 rounded-2xl bg-neutral-800 hover:bg-neutral-700 shadow">معاينة البيانات</button>
-                <button onClick={copyJSON} className="px-4 py-2 rounded-2xl bg-neutral-800 hover:bg-neutral-700 shadow">نسخ البيانات</button>
-                <button onClick={downloadJSON} className="px-4 py-2 rounded-2xl bg-white text-neutral-900 hover:bg-neutral-200 shadow">تنزيل البيانات</button>
-                <button onClick={handleSubmit} disabled={sending} className={`px-4 py-2 rounded-2xl shadow border border-neutral-700 ${sending ? 'bg-neutral-700 text-neutral-300' : 'bg-white text-neutral-900 hover:bg-neutral-200'}`}>{sending ? 'جارٍ الإرسال…' : 'إرسال النموذج'}</button>
-              </div>
-            </main>
-
-            {jsonOpen && (
-              <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" onClick={() => setJsonOpen(false)}>
-                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-3xl w-full p-4" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold">معاينة JSON</h3>
-                    <button className="px-3 py-1 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => setJsonOpen(false)}>إغلاق</button>
-                  </div>
-                  <pre className="whitespace-pre-wrap text-xs bg-neutral-950 p-3 rounded-xl overflow-auto max-h-[60vh] border border-neutral-800">{JSON.stringify(data, null, 2)}</pre>
-                </div>
-              </div>
-            )}
-
-            <footer className="max-w-5xl mx-auto px-4 py-10 text-center text-neutral-400">
-              <p>صُمّم بواسطة صلاح/ChatGPT — واجهة RTL بسيطة لجمع متطلبات شعار احترافي.</p>
-            </footer>
-          </div>
-        );
+  const handleSubmit = async () => {
+  if (!GAS_ENDPOINT || GAS_ENDPOINT.includes("PASTE_GOOGLE_APPS_SCRIPT_URL_HERE")) {
+    alert("لم يتم ضبط رابط Google Apps Script. افتح الكود واستبدل GAS_ENDPOINT برابط الويب للتطبيق.");
+    return;
+  }
+  try {
+    setSending(true);
+    await fetch(GAS_ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ timestamp: new Date().toISOString(), ...data })
+    });
+    alert('تم الإرسال بنجاح ✅');
+  } catch (e) {
+    alert('تعذّر الإرسال. تأكّد من رابط السكربت والصلاحيات ثم أعد المحاولة.');
+  } finally {
+    setSending(false);
+  }
+};
+        const subject = encodeURIComponent(`Logo Brief – ${data.brandNameAr || data.brandNameEn || 'بدون اسم'} – ${new Date().toLocaleString()}`);
+        const body = encodeURIComponent(JSON.stringify(payload, null, 2));
+        window.location.href = `mailto:${TO_EMAIL}?subject=${subject}&body=${body}`;
+        alert("تم الإرسال بنجاح ✅\n(تم فتح برنامج البريد لإرسال النموذج. إذا لم يُفتح، انسخ JSON من المعاينة وأرسله يدويًا.)");
+      } catch {
+        alert("تعذّر فتح البريد. استخدم زر نسخ JSON وأرسله يدويًا.");
       }
+      return;
+    }
 
-      ReactDOM.createRoot(document.getElementById('root')).render(<LogoBriefForm />);
-    </script>
-  </body>
-</html>
+    try {
+      setSending(true);
+      await fetch(GAS_ENDPOINT, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ timestamp: new Date().toISOString(), ...data }) });
+      alert('تم الإرسال بنجاح ✅');
+    } catch {
+      alert('تعذّر الإرسال. تأكّد من رابط السكربت والصلاحيات ثم أعد المحاولة.');
+    } finally { setSending(false); }
+  };
+
+  // ------------- UI -------------
+  return (
+    <div dir="rtl" className="min-h-screen bg-neutral-950 text-neutral-100">
+      <header className="sticky top-0 z-10 backdrop-blur bg-neutral-950/70 border-b border-neutral-800">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-xl md:text-2xl font-semibold tracking-wide">نموذج موجز تصميم شعار</h1>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 py-8 grid gap-6">
+        {/* ١) معلومات أساسية */}
+        <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
+          <h2 className="text-lg font-semibold mb-4">١) معلومات أساسية</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm mb-1">اسم العلامة (عربي)</label>
+              <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.brandNameAr} onChange={(e) => handleChange('brandNameAr', e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">اسم العلامة (إنجليزي)</label>
+              <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.brandNameEn} onChange={(e) => handleChange('brandNameEn', e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">لغة الشعار</label>
+              <select className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.logoLanguage} onChange={(e) => handleChange('logoLanguage', e.target.value)}>
+                {langOptions.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm mb-1">وصف سريع للعلامة (سطر واحد)</label>
+              <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.oneLineDesc} onChange={(e) => handleChange('oneLineDesc', e.target.value)} placeholder="ماذا تفعل علامتك؟" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm mb-1">هدف الشعار</label>
+              <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.goal} onChange={(e) => handleChange('goal', e.target.value)} placeholder="إطلاق/تحديث/تميّز…" />
+            </div>
+          </div>
+        </section>
+
+        {/* ٢) الجمهور والشخصية */}
+        <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
+          <h2 className="text-lg font-semibold mb-4">٢) الجمهور والشخصية</h2>
+          <div className="grid gap-4">
+            <div>
+              <label className="block text-sm mb-1">الجمهور المستهدف</label>
+              <textarea className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white min-h-[90px]" value={data.audience} onChange={(e) => handleChange('audience', e.target.value)} placeholder="العمر، الاهتمامات، الموقع…" />
+            </div>
+            <div>
+              <label className="block text-sm mb-2">اختر 3 صفات للشخصية</label>
+              <div className="flex flex-wrap gap-2">
+                {personalityOptions.map((opt) => {
+                  const active = data.personality.includes(opt);
+                  return (
+                    <button type="button" key={opt} onClick={() => toggleMulti('personality', opt)} className={`px-3 py-2 rounded-2xl border ${active ? 'bg-white text-neutral-900 border-white' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}>
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ٣) الألوان والمراجع */}
+        <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
+          <h2 className="text-lg font-semibold mb-4">٣) الألوان والمراجع</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm mb-1">ألوان مفضّلة</label>
+              <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.colorsPreferred} onChange={(e) => handleChange('colorsPreferred', e.target.value)} placeholder="مثال: أخضر زمردي، أسود، أبيض" />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">ألوان ممنوعة</label>
+              <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.colorsAvoided} onChange={(e) => handleChange('colorsAvoided', e.target.value)} placeholder="مثال: أحمر صارخ…" />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-4">
+            {/* شعارات مفضلة */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm">أمثلة شعارات تعجبك</label>
+                <button className="text-xs px-2 py-1 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => addRow('likedLogos', { url: '', why: '' })}>+ إضافة</button>
+              </div>
+              <div className="grid gap-3">
+                {data.likedLogos.map((row, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-start">
+                    <input className="col-span-5 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="الرابط" value={row.url} onChange={(e) => handleArrayChange('likedLogos', i, 'url', e.target.value)} />
+                    <input className="col-span-6 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="السبب" value={row.why} onChange={(e) => handleArrayChange('likedLogos', i, 'why', e.target.value)} />
+                    <button className="col-span-1 text-xs px-2 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => removeRow('likedLogos', i)}>حذف</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* شعارات غير مفضلة */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm">أمثلة شعارات لا تعجبك</label>
+                <button className="text-xs px-2 py-1 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => addRow('dislikedLogos', { url: '', why: '' })}>+ إضافة</button>
+              </div>
+              <div className="grid gap-3">
+                {data.dislikedLogos.map((row, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-start">
+                    <input className="col-span-5 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="الرابط" value={row.url} onChange={(e) => handleArrayChange('dislikedLogos', i, 'url', e.target.value)} />
+                    <input className="col-span-6 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="السبب" value={row.why} onChange={(e) => handleArrayChange('dislikedLogos', i, 'why', e.target.value)} />
+                    <button className="col-span-1 text-xs px-2 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => removeRow('dislikedLogos', i)}>حذف</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ٤) الاستخدام ونوع الشعار */}
+        <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
+          <h2 className="text-lg font-semibold mb-4">٤) الاستخدام ونوع الشعار</h2>
+          <div className="grid gap-4">
+            <div>
+              <label className="block text-sm mb-2">أين سيُستخدم الشعار؟</label>
+              <div className="flex flex-wrap gap-2">
+                {usageOptions.map((u) => (
+                  <button key={u} type="button" onClick={() => toggleMulti('usages', u)} className={`px-3 py-2 rounded-2xl border ${data.usages.includes(u) ? 'bg-white text-neutral-900 border-white' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}>
+                    {u}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm mb-1">نوع الشعار المفضّل</label>
+                <select className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.logoType} onChange={(e) => handleChange('logoType', e.target.value)}>
+                  {logoTypeOptions.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">رموز/معانٍ ترغب بإدراجها</label>
+                <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.symbolsInclude} onChange={(e) => handleChange('symbolsInclude', e.target.value)} placeholder="مثال: أسهم، دوائر، سحب، حروف…" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">رموز/معانٍ يجب تجنّبها</label>
+                <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.symbolsAvoid} onChange={(e) => handleChange('symbolsAvoid', e.target.value)} placeholder="مثال: حيوانات، وجوه بشرية…" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ٦) تفاصيل متقدمة (اختياري) */}
+        <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 shadow-lg">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">٦) تفاصيل متقدمة (اختياري)</h2>
+            <button onClick={() => setShowAdvanced((v) => !v)} className="px-3 py-2 rounded-2xl bg-neutral-800 hover:bg-neutral-700">{showAdvanced ? 'إخفاء' : 'عرض'}</button>
+          </div>
+          {showAdvanced && (
+            <div className="grid gap-4 mt-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm mb-1">رسالة العلامة</label>
+                  <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.mission} onChange={(e) => handleChange('mission', e.target.value)} placeholder="سطر موجز لرسالة العلامة" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">القيم الأساسية</label>
+                  <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.values} onChange={(e) => handleChange('values', e.target.value)} placeholder="3–5 كلمات" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm">منافسون مباشِرون</label>
+                  <button className="text-xs px-2 py-1 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => addRow('competitors', { name: '', url: '', note: '' })}>+ إضافة</button>
+                </div>
+                <div className="grid gap-3">
+                  {data.competitors.map((row, i) => (
+                    <div key={i} className="grid md:grid-cols-12 grid-cols-1 gap-2 items-start">
+                      <input className="md:col-span-3 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="الاسم" value={row.name} onChange={(e) => handleArrayChange('competitors', i, 'name', e.target.value)} />
+                      <input className="md:col-span-5 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="الرابط" value={row.url} onChange={(e) => handleArrayChange('competitors', i, 'url', e.target.value)} />
+                      <input className="md:col-span-3 bg-neutral-800 rounded-xl p-2 focus:ring-2 ring-white" placeholder="ملاحظة" value={row.note} onChange={(e) => handleArrayChange('competitors', i, 'note', e.target.value)} />
+                      <button className="md:col-span-1 text-xs px-2 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => removeRow('competitors', i)}>حذف</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">ما الذي يميزك؟</label>
+                <textarea className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white min-h-[80px]" value={data.differentiation} onChange={(e) => handleChange('differentiation', e.target.value)} placeholder="نقاط القوة والتميّز" />
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm mb-1">ملاحظات حول اللغة/الكتابة</label>
+                  <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.languageNotes} onChange={(e) => handleChange('languageNotes', e.target.value)} placeholder="التهجئة المعتمدة، حروف كبيرة/صغيرة…" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">قيود تقنية/تنفيذية</label>
+                  <input className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white" value={data.constraints} onChange={(e) => handleChange('constraints', e.target.value)} placeholder="تطريز، حفر، لون واحد…" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm mb-2">المخرجات المطلوبة</label>
+                <div className="grid md:grid-cols-4 grid-cols-2 gap-2">
+                  {Object.entries(data.deliverables).map(([k, v]) => (
+                    <label key={k} className="flex items-center gap-2 bg-neutral-800 rounded-xl p-2">
+                      <input type="checkbox" checked={!!v} onChange={(e) => setData((d) => ({ ...d, deliverables: { ...d.deliverables, [k]: e.target.checked } }))} />
+                      <span className="text-sm">
+                        {k === 'mainLogo' && 'الشعار الرئيسي'}
+                        {k === 'altLayouts' && 'بدائل (أفقي/رأسي)'}
+                        {k === 'iconOnly' && 'أيقونة فقط'}
+                        {k === 'colorSystem' && 'نظام ألوان'}
+                        {k === 'typography' && 'خطوط'}
+                        {k === 'shortGuidelines' && 'دليل مختصر'}
+                        {k === 'fullGuidelines' && 'دليل كامل'}
+                        {k === 'templates' && 'قوالب'}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">ملاحظات إضافية</label>
+                <textarea className="w-full bg-neutral-800 rounded-xl p-3 outline-none focus:ring-2 ring-white min-h-[80px]" value={data.notes} onChange={(e) => handleChange('notes', e.target.value)} placeholder="أي تفاصيل أخرى تود إضافتها" />
+              </div>
+            </div>
+          )}
+        </section>
+
+        <div className="flex flex-wrap gap-3 justify-center">
+  <button onClick={handleSubmit} disabled={sending} className={`px-6 py-3 rounded-2xl shadow border border-neutral-700 ${sending ? 'bg-neutral-700 text-neutral-300' : 'bg-white text-neutral-900 hover:bg-neutral-200'}`}>{sending ? 'جارٍ الإرسال…' : 'إرسال'}</button>
+</div>
+      </main>
+
+      {/* نافذة معاينة JSON */}
+      >
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-3xl w-full p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">معاينة JSON</h3>
+              <button className="px-3 py-1 rounded-xl bg-neutral-800 hover:bg-neutral-700" onClick={() => setJsonOpen(false)}>إغلاق</button>
+            </div>
+            <pre className="whitespace-pre-wrap text-xs bg-neutral-950 p-3 rounded-xl overflow-auto max-h-[60vh] border border-neutral-800">{JSON.stringify(data, null, 2)}</pre>
+          </div>
+        </div>
+      )}
+
+      <footer className="max-w-5xl mx-auto px-4 py-10 text-center text-neutral-400">
+        <p>Made By Salah.</p>
+      </footer>
+    </div>
+  );
+}
